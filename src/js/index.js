@@ -1,13 +1,31 @@
 const $ = (selector) => document.querySelector(selector);
 
 function App() {
+  $("#espresso-menu-list").addEventListener("click", (e) => {
+    // 수정 버튼을 클릭하면, 모달창이 뜬다.
+    if (e.target.classList.contains("menu-edit-button")) {
+      // 수정 버튼에서 가장 가까운 li 엘리먼트를 찾는다.
+      const li = e.target.closest(".menu-list-item");
+      if (!li) return;
+
+      const span = li.querySelector(".menu-name");
+
+      let name = prompt("수정할 메뉴를 입력해주세요.", span.innerText);
+
+      // 모달창에 내용을 입력하면, 메뉴 이름이 변경된다.
+      if (name && name.trim() !== "") {
+        span.innerText = name;
+      }
+    }
+  });
+
   const addMenuName = (e) => {
     // 예외처리: 사용자 입력값이 빈 값이라면 추가되지 않는다.
     if ($("#espresso-menu-name").value.trim() === "") {
       alert("값을 입력해주세요.");
       return;
     }
-    
+
     const $espressoMenuName = $("#espresso-menu-name").value;
     const menuItemTemplate = (name) => {
       return `<li class="menu-list-item d-flex items-center py-2">
@@ -42,19 +60,16 @@ function App() {
     // input은 빈 값으로 초기화한다.
     $("#espresso-menu-name").value = "";
     $("#espresso-menu-name").focus();
-  }
+  };
 
   $("#espresso-menu-form").addEventListener("submit", (e) => {
-    // form 태그가 자동으로 전송되는 걸 막는다.
     e.preventDefault();
   });
 
-  // 확인 버튼을 눌렀을 때 메뉴가 추가 된다.
   $("#espresso-menu-submit-button").addEventListener("click", () => {
     addMenuName();
   });
 
-  // 엔터키를 눌렀을 때 메뉴가 추가 된다.
   $("#espresso-menu-name").addEventListener("keydown", (e) => {
     if (e.key !== "Enter") {
       return;
