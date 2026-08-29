@@ -1,6 +1,49 @@
 const $ = (selector) => document.querySelector(selector);
 
+const store = {
+  setLocalStorage(menu) {
+    localStorage.setItem("menu", JSON.stringify(menu));
+  },
+  getLocalStorage() {
+    return JSON.parse(localStorage.getItem("menu"));
+  },
+};
+
 function App() {
+  this.menu = [];
+  this.init = () => {
+    const menuItems = store.getLocalStorage() || [];
+
+    this.menu.push(...menuItems);
+    renderingMenuItem();
+  };
+
+  const renderingMenuItem = () => {
+    const template = this.menu
+      .map((menuItem) => {
+        return `<li class="menu-list-item d-flex items-center py-2">
+              <span class="w-100 pl-2 menu-name">${menuItem.name}</span>
+              <button
+                  type="button"
+                  class="bg-gray-50 text-gray-500 text-sm mr-1 menu-edit-button"
+              >
+                  수정
+              </button>
+              <button
+                  type="button"
+                  class="bg-gray-50 text-gray-500 text-sm menu-remove-button"
+              >
+                  삭제
+              </button>
+              </li>`;
+      })
+      .join("");
+
+    $("#espresso-menu-list").innerHTML = template;
+    
+    updateMenuCount();
+  };
+  
   const addMenuName = () => {
     // 예외처리: 사용자 입력값이 빈 값이라면 추가되지 않는다.
     if ($("#espresso-menu-name").value.trim() === "") {
@@ -8,33 +51,13 @@ function App() {
       return;
     }
 
-    const $espressoMenuName = $("#espresso-menu-name").value;
-    const menuItemTemplate = (name) => {
-      return `<li class="menu-list-item d-flex items-center py-2">
-                <span class="w-100 pl-2 menu-name">${name}</span>
-                <button
-                    type="button"
-                    class="bg-gray-50 text-gray-500 text-sm mr-1 menu-edit-button"
-                >
-                    수정
-                </button>
-                <button
-                    type="button"
-                    class="bg-gray-50 text-gray-500 text-sm menu-remove-button"
-                >
-                    삭제
-                </button>
-                </li>`;
-    };
+    const espressoMenuName = $("#espresso-menu-name").value;
 
-    // 추가되는 메뉴의 마크업은 ul 태그 안에 삽입 한다.
-    $("#espresso-menu-list").insertAdjacentHTML(
-      "beforeend",
-      menuItemTemplate($espressoMenuName),
-    );
+    this.menu.push({ name: espressoMenuName });
 
-    updateMenuCount();
+    store.setLocalStorage(this.menu);
 
+    renderingMenuItem();
     // input은 빈 값으로 초기화한다.
     $("#espresso-menu-name").value = "";
     $("#espresso-menu-name").focus();
@@ -100,4 +123,5 @@ function App() {
   });
 }
 
-App();
+const app = new App();
+app.init();
