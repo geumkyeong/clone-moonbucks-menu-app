@@ -20,8 +20,8 @@ function App() {
 
   const renderingMenuItem = () => {
     const template = this.menu
-      .map((menuItem) => {
-        return `<li class="menu-list-item d-flex items-center py-2">
+      .map((menuItem, index) => {
+        return `<li data-menu-id="${index}" class="menu-list-item d-flex items-center py-2">
               <span class="w-100 pl-2 menu-name">${menuItem.name}</span>
               <button
                   type="button"
@@ -40,10 +40,10 @@ function App() {
       .join("");
 
     $("#espresso-menu-list").innerHTML = template;
-    
+
     updateMenuCount();
   };
-  
+
   const addMenuName = () => {
     // 예외처리: 사용자 입력값이 빈 값이라면 추가되지 않는다.
     if ($("#espresso-menu-name").value.trim() === "") {
@@ -53,7 +53,10 @@ function App() {
 
     const espressoMenuName = $("#espresso-menu-name").value;
 
-    this.menu.push({ name: espressoMenuName });
+    const maxId =
+      this.menu.length > 0 ? Math.max(...this.menu.map((m) => m.id)) : -1;
+
+    this.menu.push({ id: maxId + 1, name: espressoMenuName });
 
     store.setLocalStorage(this.menu);
 
@@ -64,17 +67,22 @@ function App() {
   };
 
   const updateMenuName = (e) => {
-    const li = e.target.closest(".menu-list-item");
+    const li = e.target.closest("li");
     if (!li) return;
 
     const span = li.querySelector(".menu-name");
+    const menuId = Number(li.dataset.menuId);
+
+    const existingMenu = this.menu.find((menu) => menu.id === menuId);
+    if (!existingMenu) return;
 
     let name = prompt("수정할 메뉴를 입력해주세요.", span.innerText);
+    if (!name || name.trim() === "") return;
 
-    // 모달창에 내용을 입력하면, 메뉴 이름이 변경된다.
-    if (name && name.trim() !== "") {
-      span.innerText = name;
-    }
+    existingMenu.name = name;
+
+    store.setLocalStorage(this.menu);
+    span.innerText = name;
   };
 
   const removeMenuName = (e) => {
@@ -88,7 +96,6 @@ function App() {
     updateMenuCount();
   };
 
-  // 총 메뉴 갯수를 count하여 상단에 보여준다.
   const updateMenuCount = () => {
     const menuCount = document.querySelectorAll(
       "#espresso-menu-list li",
