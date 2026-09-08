@@ -9,14 +9,49 @@ const MenuApi = {
     return response.json();
   },
   async createMenu(category, name) {
+    const response = await fetch(`${BASE_URL}/api/category/${category}/menu`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ name }),
+    });
+    if (!response.ok) {
+      console.error("에러가 발생했습니다!");
+    }
+  },
+  async updateMenu(category, name, menuId) {
     const response = await fetch(
-      `${BASE_URL}/api/category/${category}/menu`,
+      `${BASE_URL}/api/category/${category}/menu/${menuId}`,
       {
-        method: "POST",
+        method: "PUT",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ name }),
+      },
+    );
+    if (!response.ok) {
+      console.error("에러가 발생했습니다!");
+    }
+    return response.json();
+  },
+  async toggleSoldOutMenu(category, menuId) {
+    const response = await fetch(
+      `${BASE_URL}/api/category/${category}/menu/${menuId}/soldout`,
+      {
+        method: "PUT",
+      },
+    );
+    if (!response.ok) {
+      console.error("에러가 발생했습니다!");
+    }
+  },
+  async deleteMenu(category, menuId) {
+    const response = await fetch(
+      `${BASE_URL}/api/category/${category}/menu/${menuId}`,
+      {
+        method: "DELETE",
       },
     );
     if (!response.ok) {
@@ -37,7 +72,6 @@ function App() {
   this.currentCategory = "espresso";
 
   this.init = async () => {
-    // const menuItems = store.getLocalStorage();
     const menuItems = await MenuApi.getAllMenuByCategory(this.currentCategory);
 
     if (menuItems) {
@@ -50,8 +84,8 @@ function App() {
 
   const renderingMenuItem = () => {
     const template = this.menu[this.currentCategory]
-      .map((menuItem, index) => {
-        return `<li data-menu-id="${index}" class="menu-list-item d-flex items-center py-2">
+      .map((menuItem) => {
+        return `<li data-menu-id="${menuItem.id}" class="menu-list-item d-flex items-center py-2">
               <span class="w-100 pl-2 menu-name ${menuItem.isSoldOut ? "sold-out" : ""}">${menuItem.name}</span>
               <button
                 type="button"
@@ -100,48 +134,50 @@ function App() {
     $("#menu-input").focus();
   };
 
-  const updateMenuName = (e) => {
+  const updateMenuName = async (e) => {
     const li = e.target.closest("li");
     if (!li) return;
 
     const span = li.querySelector(".menu-name");
-    const menuId = Number(li.dataset.menuId);
-
-    const existingMenu = this.menu[this.currentCategory][menuId];
-    if (!existingMenu) return;
+    const menuId = li.dataset.menuId;
 
     let name = prompt("수정할 메뉴를 입력해주세요.", span.innerText);
     if (!name || name.trim() === "") return;
 
-    existingMenu.name = name;
+    const data = await MenuApi.updateMenu(this.currentCategory, name, menuId);
 
-    store.setLocalStorage(this.menu);
-    span.innerText = name;
+    this.menu[this.currentCategory] = await MenuApi.getAllMenuByCategory(
+      this.currentCategory,
+    );
+    span.innerText = data?.name;
   };
 
-  const removeMenuName = (e) => {
+  const removeMenuName = async (e) => {
     const li = e.target.closest(".menu-list-item");
     if (!li) return;
-    const menuId = Number(li.dataset.menuId);
+    const menuId = li.dataset.menuId;
 
     if (window.confirm("정말 삭제하시겠습니까?")) {
-      this.menu[this.currentCategory].splice(menuId, 1);
-
-      store.setLocalStorage(this.menu);
+      await MenuApi.deleteMenu(this.currentCategory, menuId);
+      this.menu[this.currentCategory] = await MenuApi.getAllMenuByCategory(
+        this.currentCategory,
+      );
       renderingMenuItem();
     }
   };
 
-  const soldOutMenu = (e) => {
+  const soldOutMenu = async (e) => {
     const li = e.target.closest("li");
     if (!li) return;
 
-    const menuId = Number(li.dataset.menuId);
+    const menuId = li.dataset.menuId;
 
-    const existingMenu = this.menu[this.currentCategory][menuId];
-    existingMenu.isSoldOut = !existingMenu.isSoldOut;
+    await MenuApi.toggleSoldOutMenu(this.currentCategory, menuId);
 
-    store.setLocalStorage(this.menu);
+    this.menu[this.currentCategory] = await MenuApi.getAllMenuByCategory(
+      this.currentCategory,
+    );
+
     renderingMenuItem();
   };
 
